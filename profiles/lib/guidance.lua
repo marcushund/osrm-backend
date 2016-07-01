@@ -1,18 +1,43 @@
 local Guidance = {}
 
 -- Guidance: Default Mapping from roads to types/priorities
-highway_classes = { ["motorway"] = road_priority_class.motorway, ["motorway_link"] = road_priority_class.link_road, ["trunk"] = road_priority_class.trunk, ["trunk_link"] = road_priority_class.link_road,
-                    ["primary"] = road_priority_class.primary, ["primary_link"] = road_priority_class.link_road, ["secondary"] = road_priority_class.secondary, ["secondary_link"] = road_priority_class.link_road,
-                    ["tertiary"] = road_priority_class.tertiary, ["tertiary_link"] = road_priority_class.link_road, ["unclassified"] = road_priority_class.side_residential, ["residential"] = road_priority_class.side_residential,
-                    ["service"] = road_priority_class.connectivity, ["living_street"] = road_priority_class.main_residential, ["track"] = road_priority_class.bike_path, ["path"] = road_priority_class.bike_path,
-                    ["footway"] = road_priority_class.foot_path, ["pedestrian"] = road_priority_class.foot_path, ["steps"] = road_priority_class.foot_path}
+highway_classes = { ["motorway"] = road_priority_class.motorway,
+                    ["motorway_link"] = road_priority_class.link_road,
+                    ["trunk"] = road_priority_class.trunk,
+                    ["trunk_link"] = road_priority_class.link_road,
+                    ["primary"] = road_priority_class.primary,
+                    ["primary_link"] = road_priority_class.link_road,
+                    ["secondary"] = road_priority_class.secondary,
+                    ["secondary_link"] = road_priority_class.link_road,
+                    ["tertiary"] = road_priority_class.tertiary,
+                    ["tertiary_link"] = road_priority_class.link_road,
+                    ["unclassified"] = road_priority_class.side_residential,
+                    ["residential"] = road_priority_class.side_residential,
+                    ["service"] = road_priority_class.connectivity,
+                    ["living_street"] = road_priority_class.main_residential,
+                    ["track"] = road_priority_class.bike_path,
+                    ["path"] = road_priority_class.bike_path,
+                    ["footway"] = road_priority_class.foot_path,
+                    ["pedestrian"] = road_priority_class.foot_path,
+                    ["steps"] = road_priority_class.foot_path}
+
 default_highway_class = road_priority_class.connectivity;
 
 motorway_types = { ["motorway"] = true, ["motorway_link"] = true, ["trunk"] = true, ["trunk_link"] = true }
 
 -- these road types are set with a car in mind. For bicycle/walk we probably need different ones
-road_types = { ["motorway"] = true, ["motorway_link"] = true, ["trunk"] = true, ["trunk_link"] = true, ["primary"] = true, ["primary_link"] = true,
-               ["secondary"] = true, ["secondary_link"] = true, ["tertiary"] = true, ["tertiary_link"] = true, ["unclassified"] = true, ["residential"] = true,
+road_types = { ["motorway"] = true,
+               ["motorway_link"] = true,
+               ["trunk"] = true,
+               ["trunk_link"] = true,
+               ["primary"] = true,
+               ["primary_link"] = true,
+               ["secondary"] = true,
+               ["secondary_link"] = true,
+               ["tertiary"] = true,
+               ["tertiary_link"] = true,
+               ["unclassified"] = true,
+               ["residential"] = true,
                ["living_street"] = true }
 
 link_types = { ["motorway_link"] = true, ["trunk_link"] = true, ["primary_link"] = true, ["secondary_link"] = true, ["tertiary_link"] = true }

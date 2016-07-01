@@ -152,17 +152,17 @@ void ScriptingEnvironment::InitContext(ScriptingEnvironment::Context &context)
          // road classification to be set in profile
          luabind::class_<guidance::RoadClassification>("RoadClassification")
              .property("motorway_class",
-                       &guidance::RoadClassification::isMotorwayClass,
-                       &guidance::RoadClassification::setMotorwayFlag)
+                       &guidance::RoadClassification::IsMotorwayClass,
+                       &guidance::RoadClassification::SetMotorwayFlag)
              .property("link_class",
-                       &guidance::RoadClassification::isLinkClass,
-                       &guidance::RoadClassification::setLinkClass)
+                       &guidance::RoadClassification::IsLinkClass,
+                       &guidance::RoadClassification::SetLinkClass)
              .property("may_be_ignored",
-                       &guidance::RoadClassification::isLowPriorityRoadClass,
-                       &guidance::RoadClassification::setLowPriorityFlag)
+                       &guidance::RoadClassification::IsLowPriorityRoadClass,
+                       &guidance::RoadClassification::SetLowPriorityFlag)
              .property("road_priority_class",
-                       &guidance::RoadClassification::getClass,
-                       &guidance::RoadClassification::setClass),
+                       &guidance::RoadClassification::GetClass,
+                       &guidance::RoadClassification::SetClass),
 
          luabind::class_<ExtractionWay>("ResultWay")
              // .def(luabind::constructor<>())

@@ -82,7 +82,7 @@ Intersection TurnAnalysis::assignTurnTypes(const NodeID from_nid,
 
     // Turn On Ramps Into Off Ramps, if we come from a motorway-like road
     if (node_based_graph.GetEdgeData(via_eid)
-            .road_classification.isMotorwayClass())
+            .road_classification.IsMotorwayClass())
     {
         std::for_each(intersection.begin(), intersection.end(), [](ConnectedRoad &road) {
             if (road.turn.instruction.type == TurnType::OnRamp)

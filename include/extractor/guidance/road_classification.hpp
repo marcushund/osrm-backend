@@ -17,7 +17,7 @@ namespace guidance
 
 namespace RoadPriorityClass
 {
-typedef std::uint8_t Enum;
+typedef std::uint32_t Enum;
 // Top priority Road
 const constexpr Enum MOTORWAY = 0;
 // Second highest priority
@@ -35,7 +35,7 @@ const constexpr Enum LINK_ROAD = 14;
 const constexpr Enum BIKE_PATH = 16;
 // Walk Accessible
 const constexpr Enum FOOT_PATH = 18;
-// Link types are usually not considered in forks, unless amongst each other. 
+// Link types are usually not considered in forks, unless amongst each other.
 // a road simply offered for connectivity. Will be ignored in forks/other decisions. Always
 // considered non-obvious to continue on
 const constexpr Enum CONNECTIVITY = 31;
@@ -57,48 +57,69 @@ class RoadClassification
 
   public:
     // default construction
-    RoadClassification() : motorway_class(0), link_class(0), may_be_ignored(1), road_priority_class(RoadPriorityClass::CONNECTIVITY) {}
+    RoadClassification()
+        : motorway_class(0), link_class(0), may_be_ignored(1),
+          road_priority_class(RoadPriorityClass::CONNECTIVITY)
+    {
+    }
 
-    RoadClassification(bool motorway_class, bool link_class, bool may_be_ignored, RoadPriorityClass::Enum road_priority_class)
+    RoadClassification(bool motorway_class,
+                       bool link_class,
+                       bool may_be_ignored,
+                       RoadPriorityClass::Enum road_priority_class)
         : motorway_class(motorway_class), link_class(link_class), may_be_ignored(may_be_ignored),
           road_priority_class(road_priority_class)
     {
     }
 
-    inline bool isMotorwayClass() const { return (0 != motorway_class) && (0 == link_class); }
-    inline void setMotorwayFlag(const bool new_value) { motorway_class = new_value; }
+    bool IsMotorwayClass() const { return (0 != motorway_class) && (0 == link_class); }
+    void SetMotorwayFlag(const bool new_value) { motorway_class = new_value; }
 
-    inline bool isRampClass() const { return (0 != motorway_class) && (0 != link_class); }
+    bool IsRampClass() const { return (0 != motorway_class) && (0 != link_class); }
 
-    inline bool isLinkClass() const { return (0 != link_class); }
-    inline void setLinkClass(const bool new_value) { link_class = new_value; }
+    bool IsLinkClass() const { return (0 != link_class); }
+    void SetLinkClass(const bool new_value) { link_class = new_value; }
 
-    inline bool isLowPriorityRoadClass() const { return (0 != may_be_ignored); }
-    inline void setLowPriorityFlag(const bool new_value) { may_be_ignored = new_value; }
+    bool IsLowPriorityRoadClass() const { return (0 != may_be_ignored); }
+    void SetLowPriorityFlag(const bool new_value) { may_be_ignored = new_value; }
 
-    inline std::uint32_t getPriority() const { return static_cast<std::uint32_t>(road_priority_class); }
-
-    inline RoadPriorityClass::Enum getClass() const { return road_priority_class; }
-    inline void setClass(const RoadPriorityClass::Enum new_value) { road_priority_class = new_value; }
-
-    inline bool operator==(const RoadClassification &other) const
+    std::uint32_t GetPriority() const
     {
-        return motorway_class == other.motorway_class && link_class == other.link_class &&
-               may_be_ignored == other.may_be_ignored && road_priority_class == other.road_priority_class;
+        return static_cast<std::uint32_t>(road_priority_class);
     }
 
-    inline std::string toString() const
+    RoadPriorityClass::Enum GetClass() const { return road_priority_class; }
+    void SetClass(const RoadPriorityClass::Enum new_value)
+    {
+        road_priority_class = new_value;
+    }
+
+    bool operator==(const RoadClassification &other) const
+    {
+        return motorway_class == other.motorway_class && link_class == other.link_class &&
+               may_be_ignored == other.may_be_ignored &&
+               road_priority_class == other.road_priority_class;
+    }
+
+    bool operator!=(const RoadClassification &other ) const
+    {
+        return !(*this == other);
+    }
+
+    std::string ToString() const
     {
         return std::string() + (motorway_class ? "motorway" : "normal") +
                (link_class ? "_link" : "") + (may_be_ignored ? " ignorable " : " important ") +
                std::to_string(road_priority_class);
     }
-};
+} __attribute ((packed));;
+
+static_assert(sizeof(RoadClassification) == 1,"Road Classification should fit a byte. Increasing this has a severe impact on memory.");
 
 inline bool canBeSeenAsFork(const RoadClassification first, const RoadClassification second)
 {
-    return std::abs(static_cast<int>(first.getPriority()) -
-                    static_cast<int>(second.getPriority())) <= 1;
+    return std::abs(static_cast<int>(first.GetPriority()) -
+                    static_cast<int>(second.GetPriority())) <= 1;
 }
 } // namespace guidance
 } // namespace extractor

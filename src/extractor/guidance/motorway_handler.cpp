@@ -25,7 +25,7 @@ namespace
 
 inline bool isMotorwayClass(EdgeID eid, const util::NodeBasedDynamicGraph &node_based_graph)
 {
-    return node_based_graph.GetEdgeData(eid).road_classification.isMotorwayClass();
+    return node_based_graph.GetEdgeData(eid).road_classification.IsMotorwayClass();
 }
 inline RoadClassification roadClass(const ConnectedRoad &road,
                                     const util::NodeBasedDynamicGraph &graph)
@@ -35,7 +35,7 @@ inline RoadClassification roadClass(const ConnectedRoad &road,
 
 inline bool isRampClass(EdgeID eid, const util::NodeBasedDynamicGraph &node_based_graph)
 {
-    return node_based_graph.GetEdgeData(eid).road_classification.isRampClass();
+    return node_based_graph.GetEdgeData(eid).road_classification.IsRampClass();
 }
 
 } // namespace
@@ -495,7 +495,7 @@ Intersection MotorwayHandler::fallback(Intersection intersection) const
 
         util::SimpleLogger().Write(logDEBUG)
             << "road: " << toString(road) << " Name: " << out_data.name_id
-            << " Road Class: " << out_data.road_classification.toString();
+            << " Road Class: " << out_data.road_classification.ToString();
 
         if (!road.entry_allowed)
             continue;

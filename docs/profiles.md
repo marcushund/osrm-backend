@@ -35,7 +35,7 @@ Using the power of the scripting language you wouldn't typically see something a
 
 ## Guidance
 
-The guidance parameters in profiles are currently a work in progress. They can and will change without any major version change.
+The guidance parameters in profiles are currently a work in progress. They can and will change.
 Please be aware of this when using guidance configuration possibilities.
 
 ### Road Classification
