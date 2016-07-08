@@ -106,8 +106,6 @@ TurnLaneHandler::assignTurnLanes(const NodeID at, const EdgeID via_edge, Interse
                                          previous_lane_data,
                                          previous_description_id);
 
-    std::cout << "[turn lane] " << scenario_names[scenario] << std::endl;
-
     if (scenario != TurnLaneHandler::NONE)
         (*count_called)++;
 
@@ -290,7 +288,7 @@ TurnLaneHandler::deduceScenario(const NodeID at,
                                                                                              : 0) +
                 possible_entries &&
         intersection[0].entry_allowed && !hasTag(TurnLaneType::none, lane_data))
-        lane_data.push_back({TurnLaneType::uturn, lane_data.back().to, lane_data.back().to});
+        lane_data.push_back({TurnLaneType::uturn, lane_data.back().to, lane_data.back().to,false});
 
     bool is_simple = isSimpleIntersection(lane_data, intersection);
 
@@ -645,6 +643,8 @@ std::pair<LaneDataVector, LaneDataVector> TurnLaneHandler::partitionLaneData(
         if (lane == straightmost_tag_index)
         {
             augmentEntry(turn_lane_data[straightmost_tag_index]);
+            //disable this turn for assignment if it is a -use lane only
+            turn_lane_data[straightmost_tag_index].suppress_assignment = true;
         }
 
         if (matched_at_first[lane])
@@ -656,10 +656,10 @@ std::pair<LaneDataVector, LaneDataVector> TurnLaneHandler::partitionLaneData(
             std::count(matched_at_second.begin(), matched_at_second.end(), true)) ==
             getNumberOfTurns(next_intersection))
     {
-        TurnLaneData data = {TurnLaneType::straight, 255, 0};
+        TurnLaneData data = {TurnLaneType::straight, 255, 0, true};
         augmentEntry(data);
         first.push_back(data);
-        std::sort(first.begin(), first.end());
+        std::sort(first.begin(),first.end());
     }
 
     // TODO augment straightmost turn
@@ -778,7 +778,6 @@ TurnLaneHandler::handleSliproadTurn(Intersection intersection,
                 item.to += offset;
             }
         }
-
     }
 
     const auto combined_id = [&]() {
