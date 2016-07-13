@@ -324,41 +324,6 @@ void closeOffRoundabout(const bool on_roundabout,
     }
 }
 
-// elongate a step by another. the data is added either at the front, or the back
-RouteStep elongate(RouteStep step, const RouteStep &by_step)
-{
-    BOOST_ASSERT(step.mode == by_step.mode);
-
-    step.duration += by_step.duration;
-    step.distance += by_step.distance;
-
-    // by_step comes after step -> we append at the end
-    if (step.geometry_end == by_step.geometry_begin + 1)
-    {
-        step.geometry_end = by_step.geometry_end;
-
-        // if we elongate in the back, we only need to copy the intersections to the beginning.
-        // the bearings remain the same, as the location of the turn doesn't change
-        step.intersections.insert(
-            step.intersections.end(), by_step.intersections.begin(), by_step.intersections.end());
-    }
-    // by_step comes before step -> we append at the front
-    else
-    {
-        BOOST_ASSERT(step.maneuver.waypoint_type == WaypointType::None &&
-                     by_step.maneuver.waypoint_type == WaypointType::None);
-        BOOST_ASSERT(by_step.geometry_end == step.geometry_begin + 1);
-        step.geometry_begin = by_step.geometry_begin;
-
-        // elongating in the front changes the location of the maneuver
-        step.maneuver = by_step.maneuver;
-
-        step.intersections.insert(
-            step.intersections.begin(), by_step.intersections.begin(), by_step.intersections.end());
-    }
-    return step;
-}
-
 void collapseTurnAt(std::vector<RouteStep> &steps,
                     const std::size_t two_back_index,
                     const std::size_t one_back_index,
@@ -510,6 +475,41 @@ void collapseTurnAt(std::vector<RouteStep> &steps,
 
 // Post processing can invalidate some instructions. For example StayOnRoundabout
 // is turned into exit counts. These instructions are removed by the following function
+
+// Elongate a step by another. the data is added either at the front, or the back
+RouteStep elongate(RouteStep step, const RouteStep &by_step)
+{
+    BOOST_ASSERT(step.mode == by_step.mode);
+
+    step.duration += by_step.duration;
+    step.distance += by_step.distance;
+
+    // by_step comes after step -> we append at the end
+    if (step.geometry_end == by_step.geometry_begin + 1)
+    {
+        step.geometry_end = by_step.geometry_end;
+
+        // if we elongate in the back, we only need to copy the intersections to the beginning.
+        // the bearings remain the same, as the location of the turn doesn't change
+        step.intersections.insert(
+            step.intersections.end(), by_step.intersections.begin(), by_step.intersections.end());
+    }
+    // by_step comes before step -> we append at the front
+    else
+    {
+        BOOST_ASSERT(step.maneuver.waypoint_type == WaypointType::None &&
+                     by_step.maneuver.waypoint_type == WaypointType::None);
+        BOOST_ASSERT(by_step.geometry_end == step.geometry_begin + 1);
+        step.geometry_begin = by_step.geometry_begin;
+
+        // elongating in the front changes the location of the maneuver
+        step.maneuver = by_step.maneuver;
+
+        step.intersections.insert(
+            step.intersections.begin(), by_step.intersections.begin(), by_step.intersections.end());
+    }
+    return step;
+}
 
 std::vector<RouteStep> removeNoTurnInstructions(std::vector<RouteStep> steps)
 {

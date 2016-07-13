@@ -24,6 +24,9 @@ std::vector<RouteStep> postProcess(std::vector<RouteStep> steps);
 // set of instructionst that is not cluttered by unnecessary turns/name changes.
 std::vector<RouteStep> collapseTurns(std::vector<RouteStep> steps);
 
+// Elongate a step by another. the data is added either at the front, or the back
+RouteStep elongate(RouteStep step, const RouteStep &by_step);
+
 // trim initial/final segment of very short length.
 // This function uses in/out parameter passing to modify both steps and geometry in place.
 // We use this method since both steps and geometry are closely coupled logically but

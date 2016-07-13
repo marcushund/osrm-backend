@@ -4,6 +4,7 @@
 #include "util/guidance/toolkit.hpp"
 
 #include "extractor/guidance/turn_instruction.hpp"
+#include "engine/guidance/post_processing.hpp"
 
 #include <iterator>
 #include <unordered_set>
@@ -59,101 +60,113 @@ std::vector<RouteStep> anticipateLaneChange(std::vector<RouteStep> steps)
 
         // We're walking backwards over all adjacent turns:
         // the current turn lanes constrain the lanes we have to take in the previous turn.
-        util::for_each_pair(
-            rev_first, rev_last, [&](const RouteStep &current, RouteStep &previous) {
-                const auto previous_inst = previous.maneuver.instruction;
+        util::for_each_pair(rev_first, rev_last, [&](RouteStep &current, RouteStep &previous) {
+            const auto previous_inst = previous.maneuver.instruction;
 
-                const auto current_inst = current.maneuver.instruction;
-                const auto current_lanes = current.maneuver.lanes;
+            const auto current_inst = current.maneuver.instruction;
+            const auto current_lanes = current.maneuver.lanes;
 
-                // Constrain the previous turn's lanes
-                auto &previous_lanes = previous.maneuver.lanes;
+            // Constrain the previous turn's lanes
+            auto &previous_lanes = previous.maneuver.lanes;
 
-                // Lane mapping (N:M) from previous lanes (N) to current lanes (M), with:
-                //  N > M, N > 1   fan-in situation, constrain N lanes to min(N,M) shared lanes
-                //  otherwise      nothing to constrain
-                const bool lanes_to_constrain = previous_lanes.lanes_in_turn > 1;
-                const bool lanes_fan_in =
-                    previous_lanes.lanes_in_turn > current_lanes.lanes_in_turn;
+            // Lane mapping (N:M) from previous lanes (N) to current lanes (M), with:
+            //  N > M, N > 1   fan-in situation, constrain N lanes to min(N,M) shared lanes
+            //  otherwise      nothing to constrain
+            const bool lanes_to_constrain = previous_lanes.lanes_in_turn > 1;
+            const bool lanes_fan_in = previous_lanes.lanes_in_turn > current_lanes.lanes_in_turn;
 
-                if (!lanes_to_constrain || !lanes_fan_in)
-                    return;
+            if (!lanes_to_constrain || !lanes_fan_in)
+                return;
 
-                const auto num_shared_lanes = std::min(current_lanes.lanes_in_turn,   //
-                                                       previous_lanes.lanes_in_turn); //
+            const auto num_shared_lanes = std::min(current_lanes.lanes_in_turn,   //
+                                                   previous_lanes.lanes_in_turn); //
 
-                // 0/ Tag keep straight with the next turn's direction if available
-                const auto previous_is_straight =
-                    !isLeftTurn(previous_inst) && !isRightTurn(previous_inst);
+            // 0/ Tag keep straight with the next turn's direction if available
+            const auto previous_is_straight =
+                !isLeftTurn(previous_inst) && !isRightTurn(previous_inst);
 
-                if (previous_is_straight)
-                {
-                    if (isLeftTurn(current_inst) || is_straight_left.count(&current) > 0)
-                        is_straight_left.insert(&previous);
-                    else if (isRightTurn(current_inst) || is_straight_right.count(&current) > 0)
-                        is_straight_right.insert(&previous);
-                }
+            if (previous_is_straight)
+            {
+                if (isLeftTurn(current_inst) || is_straight_left.count(&current) > 0)
+                    is_straight_left.insert(&previous);
+                else if (isRightTurn(current_inst) || is_straight_right.count(&current) > 0)
+                    is_straight_right.insert(&previous);
+            }
 
-                // 1/ How to anticipate left, right:
-                const auto anticipate_for_left_turn = [&] {
-                    // Current turn is left turn, already keep left during previous turn.
-                    // This implies constraining the rightmost lanes in the previous turn
-                    // step.
-                    const LaneID shared_lane_delta =
-                        previous_lanes.lanes_in_turn - num_shared_lanes;
-                    const LaneID previous_adjusted_lanes = std::min(current_lanes.lanes_in_turn, //
-                                                                    shared_lane_delta);          //
-                    const LaneID constraint_first_lane_from_the_right =
-                        previous_lanes.first_lane_from_the_right + previous_adjusted_lanes;
+            // 1/ How to anticipate left, right:
+            const auto anticipate_for_left_turn = [&] {
+                // Current turn is left turn, already keep left during previous turn.
+                // This implies constraining the rightmost lanes in the previous turn
+                // step.
+                const LaneID shared_lane_delta = previous_lanes.lanes_in_turn - num_shared_lanes;
+                const LaneID previous_adjusted_lanes = std::min(current_lanes.lanes_in_turn, //
+                                                                shared_lane_delta);          //
+                const LaneID constraint_first_lane_from_the_right =
+                    previous_lanes.first_lane_from_the_right + previous_adjusted_lanes;
 
-                    previous_lanes = {num_shared_lanes, constraint_first_lane_from_the_right};
-                };
+                previous_lanes = {num_shared_lanes, constraint_first_lane_from_the_right};
+            };
 
-                const auto anticipate_for_right_turn = [&] {
-                    // Current turn is right turn, already keep right during the previous turn.
-                    // This implies constraining the leftmost lanes in the previous turn step.
-                    previous_lanes = {num_shared_lanes, previous_lanes.first_lane_from_the_right};
-                };
+            const auto anticipate_for_right_turn = [&] {
+                // Current turn is right turn, already keep right during the previous turn.
+                // This implies constraining the leftmost lanes in the previous turn step.
+                previous_lanes = {num_shared_lanes, previous_lanes.first_lane_from_the_right};
+            };
 
-                // 2/ When to anticipate a left, right turn
-                if (isLeftTurn(current_inst))
+            // 2/ When to anticipate a left, right turn
+            if (isLeftTurn(current_inst))
+                anticipate_for_left_turn();
+            else if (isRightTurn(current_inst))
+                anticipate_for_right_turn();
+            else // keepStraight
+            {
+                // Heuristic: we do not have a from-lanes -> to-lanes mapping. What we use
+                // here
+                // instead in addition is the number of all lanes (not only the lanes in a
+                // turn):
+                //
+                // -v-v v-v-        straight follows
+                //  | | | |
+                // <- v v ->        keep straight here
+                //    | |
+                //  <-| |->
+                //
+                // A route from the top left to the bottom right here goes over a keep
+                // straight. If we handle all keep straights as right turns (in right-sided
+                // driving), we wrongly guide the user to the rightmost lanes in the first turn.
+                // Not only is this wrong but the opposite of what we expect.
+                //
+                // The following implements a heuristic to determine a keep straight's
+                // direction in relation to the next step. In the above example we would get:
+                //
+                // coming from the right, going to the left -> handle as left turn
+
+                if (is_straight_left.count(&current) > 0)
                     anticipate_for_left_turn();
-                else if (isRightTurn(current_inst))
+                else if (is_straight_right.count(&current) > 0)
                     anticipate_for_right_turn();
-                else // keepStraight
-                {
-                    // Heuristic: we do not have a from-lanes -> to-lanes mapping. What we use
-                    // here
-                    // instead in addition is the number of all lanes (not only the lanes in a
-                    // turn):
-                    //
-                    // -v-v v-v-        straight follows
-                    //  | | | |
-                    // <- v v ->        keep straight here
-                    //    | |
-                    //  <-| |->
-                    //
-                    // A route from the top left to the bottom right here goes over a keep
-                    // straight. If we handle all keep straights as right turns (in right-sided
-                    // driving), we wrongly guide the user to the rightmost lanes in the first turn.
-                    // Not only is this wrong but the opposite of what we expect.
-                    //
-                    // The following implements a heuristic to determine a keep straight's
-                    // direction in relation to the next step. In the above example we would get:
-                    //
-                    // coming from the right, going to the left -> handle as left turn
+                else // FIXME: right-sided driving
+                    anticipate_for_right_turn();
 
-                    if (is_straight_left.count(&current) > 0)
-                        anticipate_for_left_turn();
-                    else if (is_straight_right.count(&current) > 0)
-                        anticipate_for_right_turn();
-                    else // FIXME: right-sided driving
-                        anticipate_for_right_turn();
+                // In case the current and the previous step is a UseLane anticipation might have
+                // constrained the previous step in a way that make it compatible with the current
+                // step. If we did so we collapse them here and mark the current step as invalid,
+                // scheduled for later removal.
+                const auto current_is_use_lane = current_inst.type == TurnType::UseLane;
+                const auto previous_is_use_lane = previous_inst.type == TurnType::UseLane;
+                const auto same_lane_data = current_lanes == previous_lanes;
+
+                if (current_is_use_lane && previous_is_use_lane && same_lane_data)
+                {
+                    previous = elongate(previous, current);
+                    current.maneuver.instruction = TurnInstruction::NO_TURN();
                 }
-            });
+            }
+        });
     };
 
     std::for_each(begin(quick_lanes_ranges), end(quick_lanes_ranges), constrain_lanes);
+    steps = removeNoTurnInstructions(std::move(steps));
 
     util::guidance::print(steps);
     return steps;

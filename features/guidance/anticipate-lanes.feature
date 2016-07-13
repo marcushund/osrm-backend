@@ -280,8 +280,8 @@ Feature: Turn Lane Guidance
                | di    |                                     | off  |
 
           When I route I should get
-               | waypoints | route               | turns                                             | lanes                                                                                                     |
-               | a,e       | main,main,main,main | depart,use lane straight,use lane straight,arrive | ,left:false straight:false straight:false straight:true right:false,left:false straight:true right:false, |
+               | waypoints | route          | turns                           | lanes                                                                |
+               | a,e       | main,main,main | depart,use lane straight,arrive | ,left:false straight:false straight:false straight:true right:false, |
 
        @anticipate
        Scenario: Anticipate Lanes for through with turn before / after
